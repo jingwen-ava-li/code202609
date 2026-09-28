@@ -984,110 +984,12 @@ def _flatten_condition(reach: dict, hold: dict) -> dict:
     return output
 
 
-def _run_performance_only_evaluation(
-        model, config: dict, device, eval_seed: int) -> dict:
-    """Evaluate a monolithic controller without inventing module interventions."""
-    env_reach, env_hold = create_envs(config, device)
-    set_seed(eval_seed)
-    reach = _rollout_reach(
-        model, env_reach, config, device, {'name': 'intact'})
-    set_seed(eval_seed + 1)
-    hold = _rollout_hold(
-        model, env_hold, config, device, {'name': 'intact'})
-    intact = _flatten_condition(reach, hold)
-    fingerprints = {
-        'reach': reach['trial_fingerprint'],
-        'hold': hold['trial_fingerprint'],
-    }
-
-    task4_evaluation = evaluate_task4_fixed_roles(
-        model, config, device, eval_seed=eval_seed + 2,
-        spec={'name': 'intact'})
-    transfer_probes = {}
-    for offset, probe in enumerate((
-            'trajectory_reach_stability_hold',
-            'bilateral_reach_then_hold'), start=3):
-        set_seed(eval_seed + offset)
-        probe_result = _rollout_fixed_target_transfer_probe(
-            model,
-            create_fixed_target_probe_env(config, device, probe),
-            config,
-            device,
-            probe,
-            spec={'name': 'intact'},
-        )
-        transfer_probes[probe] = {
-            'probe': probe,
-            'intact': probe_result,
-            'conditions': {'intact': probe_result},
-            'gain_table': [],
-            'functional_specialisation': {
-                'available': False,
-                'reason': 'single_controller_no_module_interventions',
-            },
-        }
-
-    return {
-        'schema_version': 8,
-        'analysis_profile': 'performance_only',
-        'eval_seed': eval_seed,
-        'model_family': config.get('model_family', 'monolithic'),
-        'controller_interventions_applicable': False,
-        'metric_definitions': {
-            'reach_success': 'first hit within the rollout',
-            'reach_threshold_m': float(config.get(
-                'target_tolerance', MM.TAU_REACH)),
-            'hold_success': 'mean error over the last up-to-five recovery steps',
-            'hold_threshold_m': float(config.get(
-                'hold_tolerance', MM.TAU_HOLD)),
-            'both_success': 'trial-index-matched reach AND hold success',
-            'energy': 'sum of squared deterministic pre-noise muscle commands',
-            'executed_energy': 'diagnostic sum of squared noisy/clipped plant commands',
-            'movement_variance_scale': float(config.get(
-                'movement_variance_scale', 0.1)),
-            'controller_causal_metrics': 'not applicable to a single controller',
-        },
-        'conditions': {'intact': intact},
-        'matched_trial_fingerprints': fingerprints,
-        'causal_effects': {},
-        'lesion_error_changes': {},
-        'component_probe_reach_lesion_error_changes': {},
-        'task4_evaluation': task4_evaluation,
-        'task4_conditions': {'intact': task4_evaluation},
-        'task4_gain_table': [],
-        'matched_task4_fingerprints': {
-            role: values['mechanics_fingerprint']
-            for role, values in task4_evaluation.items()
-        },
-        'task4_lesion_error_changes': {},
-        'transfer_probes': transfer_probes,
-        'DDI': None,
-        'CI_routed': None,
-        'CI_raw': None,
-        'graded_functional_specialisation': {
-            'available': False,
-            'reason': 'single_controller_no_module_interventions',
-        },
-        'task4_graded_functional_specialisation': {
-            'available': False,
-            'reason': 'single_controller_no_module_interventions',
-        },
-        'component_probe_graded_functional_specialisation': {
-            'available': False,
-            'reason': 'single_controller_no_module_interventions',
-        },
-    }
-
-
 def run_post_training_evaluation(model, config: dict, device, profile: Optional[str] = None,
                                  eval_seed: Optional[int] = None) -> dict:
     """Run the exact analysis used automatically and by manual checkpoint reruns."""
     model.eval()
     profile = profile or config.get('analysis_profile', 'core')
     eval_seed = int(config.get('eval_seed', 4242) if eval_seed is None else eval_seed)
-    if not bool(getattr(model, 'supports_controller_interventions', True)):
-        return _run_performance_only_evaluation(
-            model, config, device, eval_seed)
     conditions = {}
     intact_contributions = None
     matched_trial_fingerprints = None

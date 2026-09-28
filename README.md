@@ -8,7 +8,7 @@ hand-task assignments.
 
 ## Code structure
 
-- `models.py`: bilateral and monolithic recurrent controllers, delayed
+- `models.py`: bilateral recurrent controllers, delayed
   inter-controller communication, motor routing, and graded interventions.
 - `tasks.py`: MotorNet-based bimanual arm environments and the simultaneous
   tracking-and-holding task.

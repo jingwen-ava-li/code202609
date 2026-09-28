@@ -22,7 +22,7 @@ from inference_evaluation import (
     run_post_training_evaluation,
     summarise_evaluation,
 )
-from models import BilateralNetwork, MonolithicNetwork
+from models import BilateralNetwork
 from provenance import collect_implementation_metadata
 
 
@@ -33,10 +33,6 @@ BASE_CONFIG = {
     'n_epochs': 2000,
     'learning_rate': 0.001,
     'hidden_size': 64,
-    # Width 137 gives 77,691 trainable parameters for the 46-D/12-output
-    # monolithic controller, within 0.5% of the 77,312 trainable parameters in
-    # the hidden-64 full-CC bilateral controller.
-    'monolithic_hidden_size': 137,
     'output_size': 12,
     'max_episode_steps': 50,
     'movement_variance_scale': 0.1,
@@ -255,20 +251,6 @@ CONDITION_SPECS = {
         'contralateral_routing_applicable': True,
         'cc_mode': 'none',
     },
-    'monolithic_shared': {
-        'condition_name': 'monolithic_shared',
-        'model_family': 'monolithic',
-        'objective_routing': 'shared',
-        'functional_roles_imposed': False,
-        'training_regime': 'shared_objective_task4',
-        'functional_gradient_routing': 'not_applicable_single_controller',
-        'task4_loss_normalization': 'none_shared_objective',
-        'energy_gradient_routing': 'shared_total_objective',
-        'communication_delay_applicable': False,
-        'contralateral_routing_applicable': False,
-        'cc_parameter_ownership': 'not_applicable_single_controller',
-        'cc_mode': 'none',
-    },
 }
 
 
@@ -379,15 +361,6 @@ def _build_training_model(config: dict, input_size: int, device):
             cc_mode=config['cc_mode'],
             cc_bottleneck_dim=config['cc_bottleneck_dim'],
             shared_bias_trainable=config.get('shared_bias_trainable', False),
-            device=str(device),
-        ).to(device)
-    if family == 'monolithic':
-        return MonolithicNetwork(
-            input_dim=input_size,
-            hidden_size=int(config['monolithic_hidden_size']),
-            output_dim=config['output_size'],
-            conduction_delay_steps=config['conduction_delay_steps'],
-            noise_gain=config['noise_gain'],
             device=str(device),
         ).to(device)
     raise ValueError(f'unknown model_family: {family!r}')
@@ -1353,7 +1326,7 @@ def main():
         '--conditions', type=_parse_conditions, default=['fixed_roles'],
         help=(
             'Comma-separated condition names: fixed_roles, fixed_balanced, '
-            'shared_fullcc, fixed_nocc, monolithic_shared'))
+            'shared_fullcc, fixed_nocc'))
     parser.add_argument('--seeds', type=int, default=None)
     parser.add_argument('--seed-values', type=_parse_seeds, default=None)
     parser.add_argument('--part', type=int, default=0)

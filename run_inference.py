@@ -11,7 +11,7 @@ from pathlib import Path
 import torch
 
 from inference_evaluation import create_envs, run_post_training_evaluation, summarise_evaluation
-from models import BilateralNetwork, MonolithicNetwork
+from models import BilateralNetwork
 from provenance import collect_implementation_metadata, compare_implementation_metadata
 
 
@@ -56,16 +56,6 @@ def _build_model(config, device):
             cc_mode=config['cc_mode'],
             cc_bottleneck_dim=config['cc_bottleneck_dim'],
             shared_bias_trainable=config.get('shared_bias_trainable', True),
-            device=str(device),
-        ).to(device)
-    if family == 'monolithic':
-        return MonolithicNetwork(
-            input_dim=reach.obs_dim_total,
-            hidden_size=int(config.get(
-                'monolithic_hidden_size', config['hidden_size'])),
-            output_dim=config['output_size'],
-            conduction_delay_steps=config['conduction_delay_steps'],
-            noise_gain=config['noise_gain'],
             device=str(device),
         ).to(device)
     raise ValueError(f'unknown checkpoint model_family: {family!r}')

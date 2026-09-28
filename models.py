@@ -120,7 +120,6 @@ class BilateralNetwork(nn.Module):
         self.cc_bottleneck_dim = int(cc_bottleneck_dim)
         self.shared_bias_trainable = bool(shared_bias_trainable)
         self.model_family = 'bilateral'
-        self.supports_controller_interventions = True
 
         if output_dim % 2 != 0:
             raise ValueError('output_dim must contain equal left/right motor halves')
@@ -163,7 +162,6 @@ class BilateralNetwork(nn.Module):
             torch.zeros(output_dim),
             requires_grad=self.shared_bias_trainable,
         )
-
         # Fixed anatomical routing gains.  For the left arm the right module
         # is contralateral; for the right arm the left module is contralateral.
         p = self.contra_fraction
@@ -396,107 +394,3 @@ class BilateralNetwork(nn.Module):
             (raw_c_l_stack, raw_c_r_stack),
             deterministic_actions,
         )
-
-
-class UnilateralNetwork(nn.Module):
-    """
-    Single-module recurrent controller used as the monolithic baseline.
-
-    A single GRU receives sensory observations and drives all muscle outputs.
-    Its return structure matches the bilateral controller so the same training
-    and evaluation routines can evaluate either model family.
-    """
-
-    def __init__(self, input_dim, output_dim, hidden_size=128,
-                 noise_gain=0.0, device='cpu',
-                 # Accepted so model construction follows one shared interface.
-                 conduction_delay_steps=0):
-        """Construct the single-module baseline controller."""
-        super().__init__()
-
-        self.hidden_size = hidden_size
-        self.output_dim  = output_dim
-        self.device      = device
-        self.model_family = 'monolithic'
-        self.supports_controller_interventions = False
-
-        self.gru = nn.GRUCell(input_size=input_dim, hidden_size=hidden_size)
-
-        self.readout = nn.Linear(hidden_size, output_dim, bias=False)
-        self.bias    = nn.Parameter(torch.zeros(output_dim))
-
-        self.sigmoid     = nn.Sigmoid()
-        self.noise_layer = MultiplicativeNoiseLayer(noise_gain=noise_gain)
-
-        self.reset_parameters()
-
-    def reset_buffers(self, batch_size):
-        """Accept episode resets through the shared controller interface."""
-        pass
-
-    def reset_parameters(self):
-        """Initialise recurrent and readout weights."""
-        for name, param in self.named_parameters():
-            if 'gru' in name and 'weight' in name:
-                nn.init.xavier_uniform_(param)
-        nn.init.xavier_uniform_(self.readout.weight)
-        nn.init.constant_(self.bias, 0.1)
-
-    def forward(self, inputs, hidden_state=None, lesion_mask=None, intervention=None):
-        """
-        Args:
-            inputs: [batch, time, input_dim]
-            hidden_state: Optional shared-interface tuple ``(h, _)``.
-            lesion_mask: Accepted through the shared controller interface.
-
-        Returns:
-            outputs: [batch, time, output_dim]
-            hidden_states: Repeated state pair in bilateral-compatible form.
-            contributions: Repeated contribution pair in compatible form.
-        """
-        batch_size, time_steps, _ = inputs.shape
-
-        # Use the first state slot exposed by the shared model interface.
-        if hidden_state is None:
-            h = torch.zeros(batch_size, self.hidden_size, device=self.device)
-        else:
-            h = hidden_state[0]
-
-        outputs_list = []
-        h_list       = []
-        c_list       = []
-        deterministic_actions_list = []
-
-        for t in range(time_steps):
-            x_t = inputs[:, t, :]
-
-            h = self.gru(x_t, h)
-
-            c        = self.readout(h)
-            raw_out  = c + self.bias
-            act      = self.sigmoid(raw_out)
-            noisy    = self.noise_layer(act)
-
-            outputs_list.append(noisy)
-            deterministic_actions_list.append(act)
-            h_list.append(h)
-            c_list.append(c)
-
-        outputs = torch.stack(outputs_list, dim=1)
-        h_stack = torch.stack(h_list,       dim=1)
-        c_stack = torch.stack(c_list,       dim=1)
-        deterministic_actions = torch.stack(deterministic_actions_list, dim=1)
-
-        # Repeat tensors so evaluation can use one controller return contract.
-        return (
-            outputs,
-            (h_stack, h_stack),
-            (c_stack, c_stack),
-            (c_stack, c_stack),
-            deterministic_actions,
-        )
-
-
-# Use an architecture-facing name while retaining the historical class name
-# for checkpoint compatibility with earlier project code.
-MonolithicNetwork = UnilateralNetwork

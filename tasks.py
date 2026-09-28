@@ -50,10 +50,6 @@ class BimanualArms:
             'right_arm': list(range(self.n_muscles_per_arm, self.n_muscles_total)),
         }
     
-    def get_muscle_mapping(self):
-        """Return the muscle indices assigned to each arm."""
-        return self.muscle_mapping
-    
     def get_effector_left(self):
         """Return the left-arm MotorNet effector."""
         return self.effector_left
@@ -61,10 +57,6 @@ class BimanualArms:
     def get_effector_right(self):
         """Return the right-arm MotorNet effector."""
         return self.effector_right
-    
-    def get_effectors(self):
-        """Return the left and right effectors."""
-        return (self.effector_left, self.effector_right)
     
     def transform_left_to_world(self, pos_local):
         """
@@ -424,17 +416,6 @@ class BimanualCentreOutReaching:
         
         return obs
     
-    def get_task_info(self):
-        """Return task dimensions and target geometry."""
-        return {
-            'reach_radius': self.reach_radius,
-            'n_targets': self.n_targets,
-            'include_task_indicator': self.include_task_indicator,
-            'obs_dim': self.obs_dim_total,
-            'action_dim': self.action_dim,
-        }
-
-
 class _SingleArmEnvWrapper(motornet.environment.Environment):
     """
     Minimal MotorNet environment wrapper for one arm effector.
@@ -900,22 +881,6 @@ class BimanualPosturalHolding:
 
         return obs
 
-    def get_task_info(self):
-        """Return task dimensions and perturbation settings."""
-        return {
-            'hold_duration_ms': self.hold_duration_ms,
-            'external_force_std': self.external_force_std,
-            'perturbation_mode': self.perturbation_mode,
-            'pulse_onset_range': self.pulse_onset_range,
-            'pulse_duration_range': self.pulse_duration_range,
-            'pulse_magnitude_range': self.pulse_magnitude_range,
-            'recovery_min_steps': self.recovery_min_steps,
-            'include_task_indicator': self.include_task_indicator,
-            'obs_dim': self.obs_dim_total,
-            'action_dim': self.action_dim,
-        }
-
-
 # ===== Coupled bimanual tracking-and-holding task (Task4) =====
 class BimanualCoupledTrackHold(BimanualPosturalHolding):
     """Track with one hand while the other rejects an independent force pulse.
@@ -1211,28 +1176,3 @@ class BimanualCoupledTrackHold(BimanualPosturalHolding):
             'coupling_force_right_world': coupling_right_world,
         }
         return obs, reward_left + reward_right, terminated, trunc_left | trunc_right, info
-
-    def get_task_info(self):
-        """Return Task4 demands, perturbations and observation dimensions."""
-        return {
-            'duration_ms': self.duration_ms,
-            'task4_steps': self.task4_steps,
-            'role_bias': self.role_bias,
-            'role_assignment_mode': self.role_assignment_mode,
-            'canonical_role': 'left_hold_right_track',
-            'trajectory_amplitude_range_m': self.trajectory_amplitude_range,
-            'trajectory_frequency_range_hz': self.trajectory_frequency_range,
-            'trajectory_axis': 'world_vertical_random_sign',
-            'spring_stiffness_n_per_m': self.spring_stiffness,
-            'damping_coefficient_n_s_per_m': self.damping_coefficient,
-            'max_coupling_force_n': self.max_coupling_force,
-            'hold_perturbation_mode': self.hold_perturbation_mode,
-            'hold_pulse_onset_range_steps': self.pulse_onset_range,
-            'hold_pulse_duration_range_steps': self.pulse_duration_range,
-            'hold_pulse_magnitude_range_n': self.pulse_magnitude_range,
-            'hold_recovery_min_steps': self.recovery_min_steps,
-            'stability_metric_window': 'pulse_and_recovery',
-            'include_task_indicator': self.include_task_indicator,
-            'obs_dim': self.obs_dim_total,
-            'action_dim': self.action_dim,
-        }

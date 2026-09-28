@@ -1,4 +1,4 @@
-"""Extend the shared-objective, hand-balanced pilot to the full grid.
+"""Run the full-grid shared-objective, hand-balanced condition.
 
 The three targeted constraint cells already contain five seeds each.  This
 launcher preserves those 15 runs and trains only the other 61 factorial cells

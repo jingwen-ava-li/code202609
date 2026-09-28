@@ -19,11 +19,11 @@ hand-task assignments.
 - `sweep_bilateral_with_cc.py`: main training and factorial-sweep entry point.
 - `run_inference.py`: checkpoint reconstruction and manual evaluation entry
   point.
-- `run_fixed_balanced_remaining61.py`: fixed-objective balanced-assignment
+- `run_fixed_balanced.py`: fixed-objective balanced-assignment
   continuation used for the full factorial grid.
 - `run_shared_balanced_targeted_pilot.py`: shared-objective
   balanced-assignment pilot launcher.
-- `run_shared_balanced_remaining61.py`: shared-objective balanced-assignment
+- `run_shared_balanced.py`: shared-objective balanced-assignment
   continuation used for the full factorial grid.
 - `provenance.py`: source and runtime metadata recorded with each run.
 
@@ -67,15 +67,10 @@ The main entry point exposes three conditions directly:
 
 For the shared-objective balanced-assignment condition, run
 `run_shared_balanced_targeted_pilot.py` followed by
-`run_shared_balanced_remaining61.py`. The corresponding fixed-objective
-continuation is provided in `run_fixed_balanced_remaining61.py`.
+`run_shared_balanced.py`. The corresponding fixed-objective continuation is
+provided in `run_fixed_balanced.py`.
 
 Use `--help` on each entry point for partitioning, device, seed, and output
 options. Full factorial experiments are designed to be partitioned across
 independent scheduler jobs. Every completed run writes a checkpoint, a JSON
 record, and a completion marker atomically.
-
-## Data and checkpoints
-
-No trained checkpoints, generated results, logs, or experimental data are
-included in this repository.

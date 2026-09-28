@@ -1,4 +1,4 @@
-"""Run the fixed-balanced 61-cell extension with pilot-matched provenance.
+"""Run the full-grid fixed-balanced condition with pilot-matched provenance.
 
 The completed 15-run pilot predates the folder reorganisation and its source
 manifest includes historical Slurm wrappers.  This launcher verifies that all

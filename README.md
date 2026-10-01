@@ -8,7 +8,7 @@ hand-task assignments.
 
 ## Task demonstration
 
-<a href="bimanual_task_demo.mp4?raw=1">
+<a href="bimanual_task_demo.mp4">
   <img src="bimanual_task_demo_preview.png"
        alt="Bimanual tracking and holding task demonstration"
        width="800">

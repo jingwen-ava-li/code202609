@@ -6,6 +6,10 @@ six-muscle arms in a simultaneous tracking and holding task. The experiments
 cross controller-specific versus shared objectives with fixed versus balanced
 hand-task assignments.
 
+## Task demonstration
+
+[Watch the bimanual tracking and holding task demonstration](bimanual_task_demo.mp4).
+
 ## Code structure
 
 - `models.py`: bilateral recurrent controllers, delayed
